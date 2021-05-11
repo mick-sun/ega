@@ -18,12 +18,14 @@ const gtmBody = (gid) => {
 
 app.use(async (ctx, next)=>{
   const {source, gid} = ctx.query
-  const {data} = await axios.get(source)
-  const contents = cheerio.load(data)
-  contents('head').prepend('\n'+gtmHeader(gid))
-  contents('body').prepend('\n'+gtmBody(gid))
-  ctx.body = contents.html()
+  if (source) {
+    const {data} = await axios.get(source)
+    const contents = cheerio.load(data)
+    contents('head').prepend('\n'+gtmHeader(gid))
+    contents('body').prepend('\n'+gtmBody(gid))
+    ctx.body = contents.html()
+  }
   await next()
 })
 
-app.listen(8000)
+app.listen(9000)
