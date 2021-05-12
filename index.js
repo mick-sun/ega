@@ -1,9 +1,12 @@
 #! /usr/bin/env node
 const Koa = require('koa')
+const bodyParser = require('koa-bodyparser');
+
 const axios = require('axios')
 const cheerio = require('cheerio');
 
 const app = new Koa()
+app.use(bodyParser())
 
 const gtmHeader = (gid)=>{
   return `<!-- Google Tag Manager -->
@@ -16,14 +19,28 @@ const gtmBody = (gid) => {
   <!-- End Google Tag Manager (noscript) -->`
 }
 
+let serviceProvider
+
 app.use(async (ctx, next)=>{
   const {source, gid} = ctx.query
   if (source) {
-    const {data} = await axios.get(source)
+    ctx.headers.host = source
+    serviceProvider = source
+    const url = 'https://' + source + ctx.path
+    const {data, headers} = await axios.get(url, {headers: ctx.headers})
+    ctx.response.headers = headers
     const contents = cheerio.load(data)
     contents('head').prepend('\n'+gtmHeader(gid))
     contents('body').prepend('\n'+gtmBody(gid))
     ctx.body = contents.html()
+  } else {
+    if (serviceProvider) {
+      const url = 'https://' + serviceProvider + ctx.path
+      ctx.headers.host = serviceProvider
+      const {data} = await axios.post(url, ctx.request.body, {headers: ctx.headers})
+      ctx.body = data
+    }
+  
   }
   await next()
 })
