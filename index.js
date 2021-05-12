@@ -37,8 +37,15 @@ app.use(async (ctx, next)=>{
     if (serviceProvider) {
       const url = 'https://' + serviceProvider + ctx.path
       ctx.headers.host = serviceProvider
-      const {data} = await axios.post(url, ctx.request.body, {headers: ctx.headers})
+      const {data} = await axios.request({
+        url,
+        method: ctx.request.method,
+        data: ctx.request.body,
+        headers: ctx.headers
+      })
       ctx.body = data
+    }else {
+      ctx.body = '404 - page not found'
     }
   
   }
